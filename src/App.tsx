@@ -1,21 +1,34 @@
-import React from 'react';
+import React, { Component } from 'react';
 import './App.css';
 
 enum FirstDays {
-  Monday,
-  Sunday,
-  Saturday
+  Monday = 'Monday',
+  Sunday = 'Sunday',
+  Saturday = 'Saturday'
 }
 
-function shiftArrayLeft<T>(arr: Array<T>): Array<T> {
-  // Shift all elements in the list to the left by 1 position (and move the first element to the end)
-  // e.g., shift([1, 2, 3]) => [2, 3, 1]
+function shiftArrayRight<T>(arr: Array<T>): Array<T> {
+  // Shift all elements in the list to the right by 1 position (and move the last element to the front)
+  // e.g., shift([1, 2, 3]) => [3, 1, 2]
   if (arr.length < 2)
     return arr
 
-  let firstElement: T = arr.shift()!;
-  arr.push(firstElement);
+  const lastElement: T = arr.pop()!;
+  arr.unshift(lastElement);
   return arr;
+}
+
+function saveValue(key: string, value: string) {
+  // TODO: namespace these keys
+  localStorage.setItem(key, value);
+}
+
+function getValue(key: string): string {
+  const value = localStorage.getItem(key);
+  if (value === null)
+    throw new Error('No value found for key: ' + key);
+
+  return value;
 }
 
 function getDaysList(firstDay: FirstDays) {
@@ -25,39 +38,72 @@ function getDaysList(firstDay: FirstDays) {
   if (firstDay === FirstDays.Monday) {
     return days;
   } else if (firstDay === FirstDays.Sunday) {
-    return shiftArrayLeft(days);
+    return shiftArrayRight(days);
   } else if (firstDay === FirstDays.Saturday) {
-    return shiftArrayLeft(shiftArrayLeft(days));
+    return shiftArrayRight(shiftArrayRight(days));
   }
 }
 
+function getFirstDayFromString(firstDay?: string) {
+  let value;
+  if (firstDay !== undefined)
+    value = firstDay;
+  else
+    value = getValue('firstDay');
 
-function Calendar() {
-  const firstDay = FirstDays.Monday; // TODO: This should be changeable and read from local storage
+  try {
+    return FirstDays[value as keyof typeof FirstDays];
+  }
+  catch (e) {
+    // No saved value found, use default value
+    return FirstDays.Monday;
+  }
+}
 
-  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log(event.target.value);
-    // TODO: Update local storage with new setting
+type CalendarProps = {}
 
-    console.log(getDaysList(firstDay));
-  };
+type CalendarState = {
+  firstDay: FirstDays
+}
 
-  return (
-    <div className="calendar">
-      <div className="calendar-nav">
-        {/*
+class Calendar extends Component<CalendarProps, CalendarState> {
+
+  constructor(props: CalendarProps) {
+    super(props);
+
+    this.state = { firstDay: getFirstDayFromString() };
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const value = getFirstDayFromString(event.target.value);
+    this.setState({
+      firstDay: value
+    });
+    saveValue('firstDay', value);
+  }
+
+  render() {
+    const firstDayOptions = [];
+    for (let firstDayKey in FirstDays) {
+      const firstDay: FirstDays = FirstDays[firstDayKey as keyof typeof FirstDays];
+      firstDayOptions.push(<option key={firstDay} value={firstDay}>{firstDay}</option>);
+    }
+
+    return (
+      <div className="calendar">
+        <div className="calendar-nav">
+          {/*
           This will contain navigation for the calendar, like forward/back and day of week selectors
         */}
+        </div>
+        <select value={this.state.firstDay} onChange={this.handleChange}>
+          {firstDayOptions}
+        </select>
+        {getDaysList(this.state.firstDay)}
       </div>
-      <select value={firstDay} onChange={handleChange}>
-        {Object.keys(FirstDays).map(day => (
-          <option key={day} value={day}>
-            {day}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+    );
+  }
 }
 
 

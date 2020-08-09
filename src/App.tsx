@@ -95,17 +95,47 @@ class Calendar extends Component<CalendarProps, CalendarState> {
         <div className="calendar-nav">
           {/*
           This will contain navigation for the calendar, like forward/back and day of week selectors
-        */}
+          */}
+          <select value={this.state.firstDay} onChange={this.handleChange}>
+            {firstDayOptions}
+          </select>
         </div>
-        <select value={this.state.firstDay} onChange={this.handleChange}>
-          {firstDayOptions}
-        </select>
-        {getDaysList(this.state.firstDay)}
+
+        <div className="calendar-header">
+          {getDaysList(this.state.firstDay)}
+        </div>
+
+        <div className="calendar-body">
+          <CalendarTable firstDay={this.state.firstDay} />
+        </div>
       </div>
     );
   }
 }
 
+type CalendarTableProps = {
+  firstDay: FirstDays
+}
+
+type CalendarTableState = {
+  today: Date
+}
+
+
+class CalendarTable extends Component<CalendarTableProps, CalendarTableState> {
+
+  constructor(props: CalendarTableProps) {
+    super(props);
+
+    this.state = { today: new Date() }
+  }
+
+  render() {
+    return (
+      <div>{this.props.firstDay}</div>
+    )
+  }
+}
 
 function App() {
   return (
